@@ -1,0 +1,9 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "LEIA-ME.md", "firestore.rules"]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

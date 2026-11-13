@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// Regras de segurança do Mega Truck's Acessórios.
+// Antes de publicar, troque fQZD5ctsdaQ5uyugCfHIV52k4sv1 pelo UID da sua conta
+// (Firebase Console > Authentication > Usuários > coluna "UID do usuário").
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.uid == 'fQZD5ctsdaQ5uyugCfHIV52k4sv1';
+    }
+
+    function validOrder() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['code','customer','delivery','address','payment','notes','items','subtotal','total','status','createdAt'])
+        && d.keys().hasAll(['code','customer','delivery','items','total','status','createdAt'])
+        && d.code is string && d.code.size() <= 20
+        && d.status == 'novo'
+        && d.delivery in ['retirada','entrega']
+        && d.items is list && d.items.size() > 0 && d.items.size() <= 50
+        && d.customer is map
+        && d.customer.name is string && d.customer.name.size() <= 100
+        && d.customer.phone is string && d.customer.phone.size() <= 30
+        && d.total is number && d.total >= 0
+        && d.createdAt == request.time;
+    }
+
+    // Qualquer visitante vê o catálogo; só o administrador altera.
+    match /products/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Qualquer visitante cria um pedido; só o administrador lê e gerencia.
+    match /orders/{id} {
+      allow create: if validOrder();
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
